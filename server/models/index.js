@@ -4,7 +4,7 @@ const sequelize = require('../config/db.config');
 // Import models
 const User = require('./userModel')(sequelize, Sequelize.DataTypes);
 const Project = require('./projectModel')(sequelize, Sequelize.DataTypes);
-const Admin = require('./adminModel')(sequelize, Sequelize.DataTypes);
+const Admin = require('./adminModel');
 const Message = require('./messageModel')(sequelize, Sequelize.DataTypes);
 
 // Define associations
