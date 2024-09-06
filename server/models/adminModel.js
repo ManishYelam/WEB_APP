@@ -18,7 +18,6 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: false,
         },
-        // Additional fields
     });
 
     return Admin;

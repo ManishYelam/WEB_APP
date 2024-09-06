@@ -11,11 +11,13 @@ const Message = require('./messageModel')(sequelize, Sequelize.DataTypes);
 User.hasMany(Project);
 Project.belongsTo(User);
 
-User.hasOne(Profile); // Example association
-Profile.belongsTo(User);
+User.hasOne(Project); // Example association
+Project.belongsTo(User);
 
 Admin.hasMany(Project); // Example association
 Project.belongsTo(Admin);
+
+sequelize.sync();
 
 module.exports = {
     sequelize,

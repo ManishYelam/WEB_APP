@@ -17,7 +17,6 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
-        // Additional fields
     });
 
     return Message;

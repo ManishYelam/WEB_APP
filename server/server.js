@@ -1,11 +1,12 @@
 const express = require('express');
 const app = express();
 const routes = require('./routes/index');
+require('./models/index');
 
 // Middleware
 app.use(express.json());
 
-app.use('/api', routes)
+app.use('/api', routes);
 
 // Start server
 const PORT = process.env.PORT;

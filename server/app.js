@@ -5,6 +5,7 @@ const userRoutes = require('./routes/userRoutes');
 const projectRoutes = require('./routes/projectRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const messageRoutes = require('./routes/messageRoutes');
+require('./models/index');
 
 // Middleware
 app.use(express.json());
@@ -21,3 +22,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
