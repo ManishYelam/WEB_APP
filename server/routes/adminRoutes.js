@@ -1,12 +1,23 @@
 const express = require('express');
+const AdminController = require('../controllers/admin.controller');
 const router = express.Router();
-const adminController = require('../controllers/adminController');
 
-// Admin routes
-router.get('/', adminController.getAllAdmins);
-router.get('/:id', adminController.getAdminDetails);
-router.post('/', adminController.createAdmin);
-router.put('/:id', adminController.updateAdmin);
-router.delete('/:id', adminController.deleteAdmin);
+// Route to get all admins
+router.get('/', AdminController.getAllAdmins);
+
+// Route to get an admin by ID
+router.get('/:adminId', AdminController.getAdminDetailsByID);
+
+// Route to get an admin by Email
+router.get('/:adminEmail', AdminController.getAdminDetailsByEmail);
+
+// Route to create a new admin
+router.post('/', AdminController.createAdmin);
+
+// Route to update an admin by ID
+router.put('/:adminId', AdminController.updateAdmin);
+
+// Route to delete an admin by ID
+router.delete('/:adminId', AdminController.deleteAdmin);
 
 module.exports = router;

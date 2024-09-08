@@ -1,28 +1,25 @@
-const Sequelize = require('sequelize');
+
 const sequelize = require('../config/db.config');
 
-// Import models
-const User = require('./userModel')(sequelize, Sequelize.DataTypes);
-const Project = require('./projectModel')(sequelize, Sequelize.DataTypes);
-const Admin = require('./adminModel');
-const Message = require('./messageModel')(sequelize, Sequelize.DataTypes);
+const User = require('./user.model');
+const Project = require('./project.model');
+const Admin = require('./admin.model');
 
-// Define associations
 User.hasMany(Project);
 Project.belongsTo(User);
 
-User.hasOne(Project); // Example association
+User.hasOne(Project); 
 Project.belongsTo(User);
 
-Admin.hasMany(Project); // Example association
+Admin.hasMany(Project); 
 Project.belongsTo(Admin);
 
 sequelize.sync();
+// sequelize.drop();
 
 module.exports = {
     sequelize,
     User,
     Project,
     Admin,
-    Message,
 };
