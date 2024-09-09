@@ -2,11 +2,11 @@ const express = require('express');
 const router = express.Router();
 const projectController = require('../controllers/project.controller');
 
-// Project routes
-router.get('/', projectController.getAllProjects);
-router.get('/:id', projectController.getProjectDetails);
 router.post('/', projectController.createProject);
+router.get('/', projectController.getAllProjects);
+router.get('/:id', projectController.getProjectById);
 router.put('/:id', projectController.updateProject);
 router.delete('/:id', projectController.deleteProject);
+router.post('/generate-project', projectController.generateProject);
 
 module.exports = router;
