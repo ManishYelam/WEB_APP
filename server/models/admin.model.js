@@ -8,7 +8,6 @@ const Admin = sequelize.define(
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
-      allowNull: false,
     },
     admin_name: {
       type: DataTypes.STRING,

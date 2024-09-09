@@ -1,87 +1,164 @@
-const AdminService = require("../services/admin.service");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const { sequelize } = require("../models");
 
-const getAllAdmins = async (req, res) => {
-  try {
-    const admins = await AdminService.getAllAdmins();
-    res.status(200).json(admins);
-  } catch (error) {
-    res.status(500).json({ message: "Failed to get admins", error: error.message });
-  }
-};
-
-// Get admin details by ID
-const getAdminDetailsByID = async (req, res) => {
-  const { adminId } = req.params;
-  try {
-    const admin = await AdminService.getAdminDetails(adminId);
-    res.status(200).json(admin);
-  } catch (error) {
-    res.status(500).json({
-        message: `Failed to get admin with id ${adminId}`,
-        error: error.message,
-      });
-  }
-};
-
-// Get admin details by EMAIL
-const getAdminDetailsByEmail = async (req, res) => {
-  const { adminEmail } = req.params;
-  try {
-    const admin = await AdminService.getAdminDetails(adminEmail);
-    res.status(200).json(admin);
-  } catch (error) {
-    res.status(500).json({
-        message: `Failed to get admin with id ${adminEmail}`,
-        error: error.message,
-      });
-  }
-};
-
-// Create a new admin
 const createAdmin = async (req, res) => {
-  const adminData = req.body;
   try {
-    const newAdmin = await AdminService.createAdmin(adminData);
-    res.status(201).json({ message: "Admin created successfully", data: newAdmin });
+    const { admin_name, admin_email, admin_password, admin_phone } = req.body;
+
+    if (!admin_name || !admin_email || !admin_password || !admin_phone) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(admin_password, saltRounds);
+
+    await sequelize.query(
+      "CALL create_admin(:admin_name, :admin_email, :admin_password, :admin_phone)",
+      {
+        replacements: {
+          admin_name,
+          admin_email,
+          admin_password: hashedPassword,
+          admin_phone,
+        },
+      }
+    );
+    res.status(201).json({ message: "Admin registered successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Failed to create admin", error: error.message });
+    console.error("Error registering admin:", error);
+    res
+      .status(400)
+      .json({ message: "Error registering admin", error: error.message });
   }
 };
 
-// Update an admin by ID
+const loginAdmin = async (req, res) => {
+  try {
+    const { input_email, admin_password } = req.body;
+
+    if (!input_email || !admin_password) {
+      return res
+        .status(400)
+        .json({ message: "Email and password are required" });
+    }
+
+    const [results] = await sequelize.query("CALL login_admin(:input_email)", {
+      replacements: { input_email },
+      type: sequelize.QueryTypes.SELECT,
+    });
+
+    if (results.length === 0) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    const admin = results[0];
+
+    const isMatch = await bcrypt.compare(admin_password, admin.admin_password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    const token = jwt.sign(
+      {
+        id: admin.admin_id,
+        name: admin.admin_name,
+        email: admin.admin_email,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1h",
+      }
+    );
+
+    res.status(200).json({ message: "Login successful", token });
+  } catch (error) {
+    console.error("Error logging in admin:", error);
+    res
+      .status(400)
+      .json({ message: "Error logging in admin", error: error.message });
+  }
+};
+
 const updateAdmin = async (req, res) => {
-  const { adminId } = req.params;
-  const updatedData = req.body;
   try {
-    const updatedAdmin = await AdminService.updateAdmin(adminId, updatedData);
-    res.status(200).json({ message: "Admin updated successfully", data: updatedAdmin });
+    const { input_admin_id, admin_name, admin_email, admin_password, admin_phone } = req.body;
+
+    if (!input_admin_id || !admin_name || !admin_email || !admin_phone) {
+      return res.status(400).json({ message: "All fields except password are required" });
+    }
+
+    let hashedPassword = null;
+    if (admin_password) {
+      const saltRounds = 10;
+      hashedPassword = await bcrypt.hash(admin_password, saltRounds);
+    }
+
+    await sequelize.query(
+      "CALL update_admin(:input_admin_id, :admin_name, :admin_email, :admin_password, :admin_phone)",
+      {
+        replacements: {
+          input_admin_id,
+          admin_name,
+          admin_email,
+          admin_password: hashedPassword,
+          admin_phone,
+        },
+      }
+    );
+
+    res.status(200).json({ message: "Admin updated successfully" });
   } catch (error) {
-    res.status(500).json({
-        message: `Failed to update admin with id ${adminId}`,
-        error: error.message,
-      });
+    console.error("Error updating admin:", error);
+    res.status(400).json({ message: "Error updating admin", error: error.message });
   }
 };
 
-// Delete an admin by ID
-const deleteAdmin = async (req, res) => {
-  const { adminId } = req.params;
+const getAdminById = async (req, res) => {
   try {
-    await AdminService.deleteAdmin(adminId);
+    const { input_admin_id } = req.params;
+
+    const [results] = await sequelize.query(
+      "CALL get_admin_by_id(:input_admin_id)",
+      {
+        replacements: { input_admin_id  },
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+
+    res.status(200).json(results[0]);
+  } catch (error) {
+    console.error("Error retrieving admin by ID:", error);
+    res.status(400).json({ message: "Error retrieving admin by ID", error: error.message });
+  }
+};
+
+const deleteAdmin = async (req, res) => {
+  try {
+    const { input_admin_id } = req.params;
+
+    await sequelize.query(
+      "CALL delete_admin(:input_admin_id)",
+      {
+        replacements: { input_admin_id },
+      }
+    );
+
     res.status(200).json({ message: "Admin deleted successfully" });
   } catch (error) {
-    res.status(500).json({
-        message: `Failed to delete admin with id ${adminId}`,
-        error: error.message,
-      });
+    console.error("Error deleting admin:", error);
+    res.status(400).json({ message: "Error deleting admin", error: error.message });
   }
 };
 
 module.exports = {
-  getAllAdmins,
-  getAdminDetailsByID,
-  getAdminDetailsByEmail,
   createAdmin,
+  loginAdmin,
   updateAdmin,
+  getAdminById,
   deleteAdmin
-}
+};
